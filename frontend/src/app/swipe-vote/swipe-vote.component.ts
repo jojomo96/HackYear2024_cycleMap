@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button'; // PrimeNG Button Module
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-swipe-vote',
@@ -27,7 +28,7 @@ export class SwipeVoteComponent {
   getImageUrl(): string {
     const apiKey = ''
     const currentCoordinate = this.coordinates[this.currentIndex];
-    return `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${currentCoordinate.lat},${currentCoordinate.lng}&heading=120&pitch=0&key=${apiKey}`;
+    return `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${currentCoordinate.lat},${currentCoordinate.lng}&heading=120&pitch=0&key=${environment.googleMapsApiKey}`;
   }
 
   // Handler for the Upvote button
