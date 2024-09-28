@@ -1,15 +1,14 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import * as L from 'leaflet';
-import { MapComponent } from '../map/map.component';
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-map',
   standalone: true,
-  imports: [MapComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  imports: [],
+  templateUrl: './map.component.html',
+  styleUrl: './map.component.scss'
 })
-export class DashboardComponent implements AfterViewInit {
+export class MapComponent implements AfterViewInit {
   private map: any;
 
   private initMap(): void {
