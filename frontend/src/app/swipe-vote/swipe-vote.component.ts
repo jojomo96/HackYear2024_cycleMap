@@ -1,12 +1,55 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button'; // PrimeNG Button Module
 
 @Component({
   selector: 'app-swipe-vote',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, ButtonModule], // Import PrimeNG Button Module
   templateUrl: './swipe-vote.component.html',
-  styleUrl: './swipe-vote.component.scss'
+  styleUrls: ['./swipe-vote.component.scss'],
 })
 export class SwipeVoteComponent {
+  // List of coordinates (latitude, longitude) to cycle through
+  coordinates = [
+    { lat: 50.0716554, lng: 19.9450955 },
+    { lat: 50.062622, lng: 19.939628 },
+    { lat: 50.060342, lng: 19.930246 },
+  ];
 
+  // Current index of the coordinate being displayed
+  currentIndex = 0;
+
+  // Placeholder for the error state
+  imageError = false;
+
+  // Method to get the current image URL based on the current coordinates
+  getImageUrl(): string {
+    const apiKey = ''
+    const currentCoordinate = this.coordinates[this.currentIndex];
+    return `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${currentCoordinate.lat},${currentCoordinate.lng}&heading=120&pitch=0&key=${apiKey}`;
+  }
+
+  // Handler for the Upvote button
+  upvote() {
+    console.log('Upvote clicked');
+    this.nextCoordinate();
+  }
+
+  // Handler for the Downvote button
+  downvote() {
+    console.log('Downvote clicked');
+    this.nextCoordinate();
+  }
+
+  // Method to move to the next coordinate in the list
+  nextCoordinate() {
+    this.currentIndex = (this.currentIndex + 1) % this.coordinates.length;
+    this.imageError = false; // Reset error state when moving to the next image
+  }
+
+  // Method to handle image loading error
+  onImageError() {
+    this.imageError = true;
+  }
 }
