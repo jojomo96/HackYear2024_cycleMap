@@ -1,0 +1,27 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: sommerlager-backend
+  labels:
+    app: sommerlager-backend
+  annotations:
+    app: sommerlager-backend
+    cert-manager.io/cluster-issuer: lets-encrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: "100M"
+spec:
+  ingressClassName: public
+  tls:
+    - hosts:
+        - sommerlager-backend.goetz01.de
+      secretName: sommerlager-backend-ingress-tls
+  rules:
+    - host: sommerlager-backend.goetz01.de
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8090

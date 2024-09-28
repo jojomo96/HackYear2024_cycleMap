@@ -1,0 +1,35 @@
+
+> frontend@0.0.0 start
+> node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng serve --host 0.0.0.0 --hmr --disable-host-check
+
+Warning: Running a server with --disable-host-check is a security risk. See https://medium.com/webpack/webpack-dev-server-middleware-security-issues-1489d950874a for more information.
+- Building...
+
+
+Initial Chunk Files | Names         |  Raw Size
+styles.css          | styles        | 228.39 kB |
+polyfills.js        | polyfills     |  83.46 kB |
+main.js             | main          |  73.99 kB |
+
+                    | Initial Total | 385.84 kB
+
+Application bundle generation complete. [3.516 seconds]
+Watch mode enabled. Watching for file changes...
+  ➜  Local:   http://localhost:4200/
+  ➜  Network: http://49.12.236.142:4200/
+  ➜  Network: http://172.22.1.1:4200/
+  ➜  Network: http://172.21.0.1:4200/
+- Changes detected. Rebuilding...
+
+
+No output file changes.
+
+Unchanged output files: 3
+Application bundle generation complete. [0.441 seconds]
+
+> frontend@0.0.0 start
+> node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng serve --host 0.0.0.0 --hmr --disable-host-check
+
+Warning: Running a server with --disable-host-check is a security risk. See https://medium.com/webpack/webpack-dev-server-middleware-security-issues-1489d950874a for more information.
+? Port 4200 is already in use.
+Would you like to use a different port? (Y/n) [46D[46CKilled

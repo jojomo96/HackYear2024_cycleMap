@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+    app.kubernetes.io/name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        app.kubernetes.io/name: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: registry.coregame.de/sommerlager/pocketbase-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
