@@ -62,7 +62,7 @@
   },
   {
     "id": "yqbfs82878m1lba",
-    "name": "Swipe_to_ride",
+    "name": "features",
     "type": "base",
     "system": false,
     "schema": [
@@ -82,30 +82,34 @@
       },
       {
         "system": false,
-        "id": "rjdrtcur",
-        "name": "geometry_id",
-        "type": "number",
-        "required": false,
-        "presentable": true,
+        "id": "crxcfzgr",
+        "name": "geometry",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
         "unique": false,
         "options": {
-          "min": 0,
-          "max": null,
-          "noDecimal": true
+          "collectionId": "s5u46d4te5nixbg",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
         }
       },
       {
         "system": false,
-        "id": "wutlotmw",
-        "name": "properties_id",
-        "type": "number",
-        "required": false,
-        "presentable": true,
+        "id": "mt9pkpbi",
+        "name": "property",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
         "unique": false,
         "options": {
-          "min": 0,
-          "max": null,
-          "noDecimal": true
+          "collectionId": "fkgofdk6s501yub",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
         }
       }
     ],
@@ -216,122 +220,5 @@
     "updateRule": "",
     "deleteRule": "",
     "options": {}
-  },
-  {
-    "id": "8z8hbzm6mo25yhh",
-    "name": "join",
-    "type": "view",
-    "system": false,
-    "schema": [
-      {
-        "system": false,
-        "id": "7z7xz24u",
-        "name": "geojson_id",
-        "type": "relation",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "collectionId": "yqbfs82878m1lba",
-          "cascadeDelete": false,
-          "minSelect": null,
-          "maxSelect": 1,
-          "displayFields": null
-        }
-      },
-      {
-        "system": false,
-        "id": "a0yedwx4",
-        "name": "geojson_type",
-        "type": "text",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": 0,
-          "max": 32,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "gc0u0fho",
-        "name": "geometry_type",
-        "type": "text",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": 0,
-          "max": 32,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "8ixxfpfa",
-        "name": "geometry_longitude",
-        "type": "number",
-        "required": false,
-        "presentable": true,
-        "unique": false,
-        "options": {
-          "min": -180,
-          "max": 180,
-          "noDecimal": false
-        }
-      },
-      {
-        "system": false,
-        "id": "eqm5tqai",
-        "name": "geometry_latitude",
-        "type": "number",
-        "required": false,
-        "presentable": true,
-        "unique": false,
-        "options": {
-          "min": -180,
-          "max": 180,
-          "noDecimal": false
-        }
-      },
-      {
-        "system": false,
-        "id": "qklvc7tf",
-        "name": "property_name",
-        "type": "text",
-        "required": false,
-        "presentable": true,
-        "unique": false,
-        "options": {
-          "min": 0,
-          "max": 32,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "e7rerbjn",
-        "name": "property_score",
-        "type": "number",
-        "required": false,
-        "presentable": true,
-        "unique": false,
-        "options": {
-          "min": -255,
-          "max": 255,
-          "noDecimal": false
-        }
-      }
-    ],
-    "indexes": [],
-    "listRule": "",
-    "viewRule": "",
-    "createRule": null,
-    "updateRule": null,
-    "deleteRule": null,
-    "options": {
-      "query": "SELECT\n   (ROW_NUMBER() OVER()) as id,\n    g.id AS geojson_id,\n    g.type AS geojson_type,\n    geometry.type AS geometry_type,\n    geometry.longitude AS geometry_longitude,\n    geometry.latitude AS geometry_latitude,\n    properties.name AS property_name,\n    properties.score AS property_score\nFROM \n    Swipe_to_ride g\nJOIN \n    geometry ON g.geometry_id = geometry.id\nJOIN \n    properties ON g.properties_id = properties.id;"
-    }
   }
 ]
