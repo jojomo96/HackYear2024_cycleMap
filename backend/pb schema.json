@@ -90,7 +90,7 @@
         "unique": false,
         "options": {
           "collectionId": "s5u46d4te5nixbg",
-          "cascadeDelete": false,
+          "cascadeDelete": true,
           "minSelect": null,
           "maxSelect": 1,
           "displayFields": null
@@ -99,14 +99,14 @@
       {
         "system": false,
         "id": "mt9pkpbi",
-        "name": "property",
+        "name": "properties",
         "type": "relation",
         "required": true,
         "presentable": false,
         "unique": false,
         "options": {
           "collectionId": "fkgofdk6s501yub",
-          "cascadeDelete": false,
+          "cascadeDelete": true,
           "minSelect": null,
           "maxSelect": 1,
           "displayFields": null
@@ -132,7 +132,7 @@
         "id": "wotpjgvy",
         "name": "type",
         "type": "text",
-        "required": false,
+        "required": true,
         "presentable": false,
         "unique": false,
         "options": {
