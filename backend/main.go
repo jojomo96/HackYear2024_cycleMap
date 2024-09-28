@@ -1,18 +1,12 @@
 package main
 
 import (
-	"log"
-	"os"
-	"time"
+    "log"
+    "os"
 
-	"github.com/labstack/echo/v5"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
-	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/daos"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/tools/types"
+    "github.com/pocketbase/pocketbase"
+    "github.com/pocketbase/pocketbase/apis"
+    "github.com/pocketbase/pocketbase/core"
 )
 
 func main() {
@@ -23,4 +17,8 @@ func main() {
         e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS("./pb_public"), false))
         return nil
     })
+
+    if err := app.Start(); err != nil {
+        log.Fatal(err)
+    }
 }
