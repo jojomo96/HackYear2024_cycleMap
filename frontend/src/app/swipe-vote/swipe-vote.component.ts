@@ -31,15 +31,15 @@ export class SwipeVoteComponent {
     return `https://maps.googleapis.com/maps/api/streetview?size=640x480&location=${currentCoordinate.lat},${currentCoordinate.lng}&heading=120&pitch=0&key=${environment.googleMapsApiKey}`;
   }
 
-  // Handler for the Upvote button
-  upvote() {
-    console.log('Upvote clicked');
+  // Handler for the Upvote button with latitude and longitude parameters
+  upvote(lat: number, lng: number) {
+    console.log('Upvote clicked for coordinates:', lat, lng);
     this.nextCoordinate();
   }
 
-  // Handler for the Downvote button
-  downvote() {
-    console.log('Downvote clicked');
+  // Handler for the Downvote button with latitude and longitude parameters
+  downvote(lat: number, lng: number) {
+    console.log('Downvote clicked for coordinates:', lat, lng);
     this.nextCoordinate();
   }
 
