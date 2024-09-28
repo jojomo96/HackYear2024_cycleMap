@@ -1,4 +1,4 @@
-import { AfterViewInit, Component } from '@angular/core';
+import { Component, AfterViewInit, ElementRef } from '@angular/core';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'lrm-graphhopper';
@@ -46,9 +46,14 @@ export class MapComponent implements AfterViewInit {
       },
       routeWhileDragging: true,  // Allow route to be updated while dragging waypoints
       addWaypoints: false,   // Disable the draggable waypoints UI
-    });
+    }).addTo(this.map);
 
-    routingControl.addTo(this.map);
+    routingControl.on('routesfound', () => {
+      const routingContainer = document.querySelector('.leaflet-routing-container');
+    if (routingContainer) {
+      (routingContainer as HTMLElement).style.display = 'none';
+    }
+    });
     // Log successful routing responses
     routingControl.on('routesfound', function(e) {
       const routes = e.routes;
