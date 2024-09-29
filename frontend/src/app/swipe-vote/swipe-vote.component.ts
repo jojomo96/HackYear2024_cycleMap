@@ -32,27 +32,34 @@ export class SwipeVoteComponent implements OnInit {
     });
   }
 
-  // Method to get the current coordinates from the GeoJSON data
-  getCurrentCoordinates() {
-    if (this.geojson && this.geojson.features.length > 0) {
-      const currentFeature = this.geojson.features[this.currentIndex];
-      // Extracting coordinates based on GeoJSON standard [lng, lat]
-      const [longitude, latitude] = currentFeature.geometry.coordinates;
-      return { lat: latitude, lng: longitude };
+  // Function to calculate the updated score based on limits and proximity
+  updateScoreLimitBased(currentScore: number, vote: number, maxScore = 255, minScore = -255, k = 0.2): number {
+    let scoreChange;
+    if (vote === 1) {
+      // Upvote - Increase score towards +10
+      scoreChange = k * (maxScore - currentScore);
+    } else {
+      // Downvote - Decrease score towards -10
+      scoreChange = k * (currentScore - minScore);
     }
-    return null;
+
+    // Calculate new score and clamp it within min and max scores
+    let newScore = currentScore + (vote === 1 ? scoreChange : -scoreChange);
+    return Math.max(Math.min(newScore, maxScore), minScore);
   }
 
   // Function to update or create an entry
-  async updateOrCreateEntry(latitude: number, longitude: number, newScore: number): Promise<void> {
+  async updateOrCreateEntry(latitude: number, longitude: number, vote: number): Promise<void> {
     try {
-      // Check if an existing geometry entry matches the provided latitude and longitude
+      // Step 1: Check if an existing geometry entry matches the provided latitude and longitude
       const existingGeometry = await pb.collection('geometry').getList(1, 1, {
         filter: `latitude = ${latitude} && longitude = ${longitude}`,
       });
 
       if (existingGeometry.items.length > 0) {
         const geometryEntry = existingGeometry.items[0];
+
+        // Step 2: Find the related Swipe_to_ride entry
         const existingFeature = await pb.collection('features').getList(1, 1, {
           filter: `geometry = "${geometryEntry.id}"`,
         });
@@ -61,20 +68,22 @@ export class SwipeVoteComponent implements OnInit {
           const featureEntry = existingFeature.items[0];
           const propertiesId = featureEntry['properties'];
 
+          // Step 3: Update the properties entry with the new score using the scoring function
           const existingProperty = await pb.collection('properties').getOne(propertiesId);
-          const updatedScore = (existingProperty['score'] || 0) + newScore;
+          const currentScore = existingProperty['score'] || 0; // Handle missing score as zero
+          const newScore = this.updateScoreLimitBased(currentScore, vote);
 
           await pb.collection('properties').update(propertiesId, {
-            score: updatedScore,
+            score: newScore,
           });
-          console.log(`Updated score to ${updatedScore} for existing properties entry.`);
+          console.log(`Updated score to ${newScore} for existing properties entry.`);
         } else {
           console.log('No related feature entry found for existing geometry entry.');
         }
       } else {
         // Create new geometry, properties, and feature entries
         const geometryRes: any = await this.http.post('http://localhost:8090/api/collections/geometry/records', {
-          type: 'default', 
+          type: 'default',
           longitude: longitude,
           latitude: latitude,
         }).toPromise();
@@ -83,19 +92,26 @@ export class SwipeVoteComponent implements OnInit {
           throw new Error('Failed to create new geometry entry.');
         }
 
+        const newGeometry: any = geometryRes;
+
+        // Create new properties entry with an initial score adjusted by the vote
+        const initialScore = vote === 1 ? 51 : -51;
         const propertiesRes: any = await this.http.post('http://localhost:8090/api/collections/properties/records', {
           name: 'default',
-          score: newScore,
+          score: initialScore,
         }).toPromise();
 
         if (!propertiesRes || !propertiesRes.id) {
           throw new Error('Failed to create new properties entry.');
         }
 
+        const newProperties = propertiesRes;
+
+        // Create new features entry
         await this.http.post('http://localhost:8090/api/collections/features/records', {
           type: 'default',
-          geometry: geometryRes.id,
-          properties: propertiesRes.id,
+          geometry: newGeometry.id,
+          properties: newProperties.id,
         }).toPromise();
 
         console.log('Created new geometry, properties, and linked them in features.');
@@ -103,6 +119,16 @@ export class SwipeVoteComponent implements OnInit {
     } catch (error) {
       console.error('Error updating or creating entry:', error);
     }
+  }
+
+  // Method to get the current coordinates from the GeoJSON data
+  getCurrentCoordinates() {
+    if (this.geojson && this.geojson.features.length > 0) {
+      const currentFeature = this.geojson.features[this.currentIndex];
+      const [longitude, latitude] = currentFeature.geometry.coordinates;
+      return { lat: latitude, lng: longitude };
+    }
+    return null;
   }
 
   // Method to get the current image URL based on the current coordinates
@@ -120,7 +146,7 @@ export class SwipeVoteComponent implements OnInit {
     if (coordinates) {
       const { lat, lng } = coordinates;
       console.log('Upvote clicked for coordinates:', lat, lng);
-      this.updateOrCreateEntry(lat, lng, 1);
+      this.updateOrCreateEntry(lat, lng, 1); // Pass vote = 1 for upvote
       this.nextCoordinate();
     }
   }
@@ -131,7 +157,7 @@ export class SwipeVoteComponent implements OnInit {
     if (coordinates) {
       const { lat, lng } = coordinates;
       console.log('Downvote clicked for coordinates:', lat, lng);
-      this.updateOrCreateEntry(lat, lng, -1);
+      this.updateOrCreateEntry(lat, lng, -1); // Pass vote = -1 for downvote
       this.nextCoordinate();
     }
   }

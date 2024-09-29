@@ -6,6 +6,7 @@ import 'lrm-graphhopper';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoordinateService } from '../coordinate.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-map',
@@ -118,16 +119,21 @@ export class MapComponent implements AfterViewInit {
         const distance = getDistanceBetweenPoints(prevPoint, currentPoint);
         const angle = getAngleBetweenPoints(prevPoint, currentPoint, nextPoint);
 
-        if (distance > thresholdDistance && angle >= thresholdAngle) {
-          filteredCoordinates.push(currentPoint);
-          L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
-            color: 'red',
-            fillColor: '#f03',
-            fillOpacity: 0.5,
-            radius: 35
-          }).addTo(this.map);
+            // Only keep the point if it is farther than the threshold distance and the angle change is significant
+            if (distance > thresholdDistance && angle >= thresholdAngle) {
+                filteredCoordinates.push(currentPoint);
+
+                // Mark significant direction changes with a red circle
+                if (environment.debug_display) {
+                  L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
+                      color: 'red',
+                      fillColor: '#f03',
+                      fillOpacity: 0.5,
+                      radius: 35
+                  }).addTo(this.map);
+                }
+            }
         }
-      }
 
       filteredCoordinates.push(coordinates[coordinates.length - 1]);
 
