@@ -160,32 +160,32 @@ export class MapComponent implements AfterViewInit {
     });
   }
 
-  // Fetch roads around the accident using Overpass API
-  private fetchNearbyRoads(): void {
-    const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way["highway"](around:${this.radius},${this.accidentCoords[0]},${this.accidentCoords[1]});out tags geom;`;
+  // // Fetch roads around the accident using Overpass API
+  // private fetchNearbyRoads(): void {
+  //   const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way["highway"](around:${this.radius},${this.accidentCoords[0]},${this.accidentCoords[1]});out tags geom;`;
 
-    fetch(overpassUrl)
-      .then((response) => response.json())
-      .then((data) => {
-        // Process each road (way) from the Overpass API response
-        data.elements.forEach((element: any) => {
-          if (element.type === 'way' && element.geometry) {
-            const latlngs = element.geometry.map((geom: any) => [geom.lat, geom.lon]);
+  //   fetch(overpassUrl)
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // Process each road (way) from the Overpass API response
+  //       data.elements.forEach((element: any) => {
+  //         if (element.type === 'way' && element.geometry) {
+  //           const latlngs = element.geometry.map((geom: any) => [geom.lat, geom.lon]);
 
-            // Draw the road as a polyline and set the color to red
-            L.polyline(latlngs, { color: 'red', weight: 6, opacity: 0.8 }).addTo(this.map);
+  //           // Draw the road as a polyline and set the color to red
+  //           L.polyline(latlngs, { color: 'red', weight: 6, opacity: 0.8 }).addTo(this.map);
 
-          }
-        });
-      })
-      .catch((err) => {
-        console.error('Error fetching road data from Overpass API: ', err);
-      });
-  }
+  //         }
+  //       });
+  //     })
+  //     .catch((err) => {
+  //       console.error('Error fetching road data from Overpass API: ', err);
+  //     });
+  // }
 
   ngAfterViewInit(): void {
     this.initMap();
     this.addRoute();
-    this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes
+    // this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes
   }
 }
