@@ -36,50 +36,108 @@ export class MapComponent implements AfterViewInit {
   }
 
   public addRoute(): void {
-    console.log(this.routingControl);
-    
     if (this.routingControl) {
-      this.map.removeControl(this.routingControl);
-      console.log('Removed previous route');
+        this.map.removeControl(this.routingControl);
+        console.log('Removed previous route');
     }
 
     this.routingControl = L.Routing.control({
-      waypoints: [
-        L.latLng(this.latitudeStart, this.longitudeStart),  // Starting point
-        L.latLng(this.latitudeFinish, this.longitudeFinish)  // Destination point
-      ],
-      // router: new L.Routing.GraphHopper('3c4ee12e-a6c1-4915-a4d5-0bebcbde7a6a', {
-      router: new (L.Routing as any).GraphHopper('3c4ee12e-a6c1-4915-a4d5-0bebcbde7a6a', {
-        urlParameters: {
-          vehicle: 'bike'
-        }
-      }),
-      lineOptions: {
-        styles: [{ color: 'blue', opacity: 0.6, weight: 5 }],
-        extendToWaypoints: true,
-        missingRouteTolerance: 1
-      },
-      routeWhileDragging: true,  // Allow route to be updated while dragging waypoints
-      addWaypoints: false,   // Disable the draggable waypoints UI
+        waypoints: [
+            L.latLng(this.latitudeStart, this.longitudeStart),  // Starting point
+            L.latLng(this.latitudeFinish, this.longitudeFinish)  // Destination point
+        ],
+        router: new (L.Routing as any).GraphHopper('3c4ee12e-a6c1-4915-a4d5-0bebcbde7a6a', {
+            urlParameters: {
+                vehicle: 'bike'
+            }
+        }),
+        lineOptions: {
+            styles: [{ color: 'blue', opacity: 0.6, weight: 5 }],
+            extendToWaypoints: true,
+            missingRouteTolerance: 1
+        },
+        routeWhileDragging: true,
+        addWaypoints: false
     }).addTo(this.map);
 
-    this.routingControl.on('routesfound', () => {
-      const routingContainer = document.querySelector('.leaflet-routing-container');
-      if (routingContainer) {
-      (routingContainer as HTMLElement).style.display = 'none';
-      }
-    });
-    // Log successful routing responses
-    this.routingControl.on('routesfound', function(e) {
-      const routes = e.routes;
-      console.log('Routes found:', routes);
+    this.routingControl.on('routesfound', (e) => {
+        const routes = e.routes;
+        const thresholdDistance = 50;  // Threshold distance in meters for overlap removal
+        const thresholdAngle = 30;     // Threshold angle in degrees to detect significant turns
+
+        // Helper function to calculate the angle between two vectors
+        const getAngleBetweenPoints = (p1: any, p2: any, p3: any): number => {
+            const dx1 = p2.lng - p1.lng;
+            const dy1 = p2.lat - p1.lat;
+            const dx2 = p3.lng - p2.lng;
+            const dy2 = p3.lat - p2.lat;
+
+            const dotProduct = dx1 * dx2 + dy1 * dy2;
+            const magnitude1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+            const magnitude2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+            const angle = Math.acos(dotProduct / (magnitude1 * magnitude2)) * (180 / Math.PI);
+            return angle;
+        };
+
+        // Helper function to calculate the distance between two points
+        const getDistanceBetweenPoints = (p1: any, p2: any): number => {
+            const latlng1 = L.latLng(p1.lat, p1.lng);
+            const latlng2 = L.latLng(p2.lat, p2.lng);
+            return latlng1.distanceTo(latlng2);  // Returns distance in meters
+        };
+
+        const coordinates = routes[0].coordinates;
+        const filteredCoordinates: any[] = [coordinates[0]]; // Start with the first point
+
+        // for (let i = 1; i < coordinates.length - 1; i++) {
+        //    // Mark significant direction changes with a red circle
+        //    L.circle(L.latLng(coordinates[i], coordinates[i]), {
+        //     color: 'red',
+        //     fillColor: '#f03',
+        //     fillOpacity: 0.5,
+        //     radius: 15
+        //   }).addTo(this.map);
+        // }
+
+        for (let i = 1; i < coordinates.length - 1; i++) {
+            const prevPoint = filteredCoordinates[filteredCoordinates.length - 1];
+            const currentPoint = coordinates[i];
+            const nextPoint = coordinates[i + 1];
+            const distance = getDistanceBetweenPoints(prevPoint, currentPoint);
+            const angle = getAngleBetweenPoints(prevPoint, currentPoint, nextPoint);
+
+            // Only keep the point if it is farther than the threshold distance and the angle change is significant
+            if (distance > thresholdDistance && angle >= thresholdAngle) {
+                filteredCoordinates.push(currentPoint);
+
+                // Mark significant direction changes with a red circle
+                L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0.5,
+                    radius: 35
+                }).addTo(this.map);
+            }
+        }
+
+        // Always add the last point (the destination)
+        filteredCoordinates.push(coordinates[coordinates.length - 1]);
+
+        // Plot the final filtered points
+        console.log('Filtered coordinates:', filteredCoordinates);
+
+        // Hide the default routing container
+        const routingContainer = document.querySelector('.leaflet-routing-container');
+        if (routingContainer) {
+            (routingContainer as HTMLElement).style.display = 'none';
+        }
     });
 
-    // Log any errors during routing
     this.routingControl.on('routingerror', function(e) {
-      console.error('Routing error:', e);
+        console.error('Routing error:', e);
     });
-  }
+}
 
   ngAfterViewInit(): void {
     this.initMap();
