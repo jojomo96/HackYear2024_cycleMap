@@ -11,6 +11,47 @@ import { CoordinateService } from '../coordinate.service';
 import { CentredMapService } from '../centred_map.service';
 import { environment } from '../../environments/environment';
 
+import PocketBase from 'pocketbase';
+
+const pb = new PocketBase(environment.pocketBaseUrl);
+
+async function fetchAllFeaturesWithRelations() {
+  let page = 1;
+  const perPage = 50; // Define how many records to fetch per request
+  let allFeatures: any[] = [];
+
+  try {
+    while (true) {
+      // Fetch records from the 'features' collection with expanded relations
+      const result = await pb.collection('features').getList(page, perPage, {
+        expand: 'geometry,properties',
+      });
+
+      // Add the fetched items to the allFeatures array
+      allFeatures = allFeatures.concat(result.items);
+
+      // Check if we have fetched all pages
+      if (result.items.length < perPage) {
+        break; // If fewer items than perPage are returned, we've reached the last page
+      }
+
+      // Increment the page number to fetch the next set of records
+      page++;
+    }
+
+    // Log all fetched records
+    console.log('All records have been successfully fetched.');
+    console.log(allFeatures); // Log all fetched records
+
+    // Process the fetched data as needed
+    return allFeatures;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return [];
+  }
+}
+
+
 @Component({
   selector: 'app-map',
   standalone: true,
@@ -18,7 +59,7 @@ import { environment } from '../../environments/environment';
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
 })
-export class MapComponent implements OnInit, AfterViewInit{
+export class MapComponent implements OnInit, AfterViewInit {
   private map: any;
   private routingControl: L.Routing.Control | null = null;
   latitudeStart: number = 50.06143;
@@ -27,6 +68,7 @@ export class MapComponent implements OnInit, AfterViewInit{
   longitudeFinish: number = 19.944544;
   showRoute: boolean = true;
   private centredMapSubscription!: Subscription;
+  private radius: number = 10;
 
   constructor(private coordinateService: CoordinateService, private centredMapService: CentredMapService) {}
 
@@ -161,21 +203,21 @@ export class MapComponent implements OnInit, AfterViewInit{
         const distance = getDistanceBetweenPoints(prevPoint, currentPoint);
         const angle = getAngleBetweenPoints(prevPoint, currentPoint, nextPoint);
 
-            // Only keep the point if it is farther than the threshold distance and the angle change is significant
-            if (distance > thresholdDistance && angle >= thresholdAngle) {
-                filteredCoordinates.push(currentPoint);
+        // Only keep the point if it is farther than the threshold distance and the angle change is significant
+        if (distance > thresholdDistance && angle >= thresholdAngle) {
+          filteredCoordinates.push(currentPoint);
 
-                // Mark significant direction changes with a red circle
-                if (environment.debug_display) {
-                  L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
-                      color: 'red',
-                      fillColor: '#f03',
-                      fillOpacity: 0.5,
-                      radius: 35
-                  }).addTo(this.map);
-                }
-            }
+          // Mark significant direction changes with a red circle
+          if (environment.debug_display) {
+            L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
+              color: 'red',
+              fillColor: '#f03',
+              fillOpacity: 0.5,
+              radius: 35
+            }).addTo(this.map);
+          }
         }
+      }
 
       filteredCoordinates.push(coordinates[coordinates.length - 1]);
 
@@ -188,7 +230,6 @@ export class MapComponent implements OnInit, AfterViewInit{
         this.coordinateService.setGeoJSON(geoJSONRoute);
       }
 
-
       const routingContainer = document.querySelector('.leaflet-routing-container');
       if (routingContainer) {
         (routingContainer as HTMLElement).style.display = 'none';
@@ -200,8 +241,51 @@ export class MapComponent implements OnInit, AfterViewInit{
     });
   }
 
+  private async fetchNearbyRoads(): Promise<void> {
+    try {
+      // Fetch all features with related data
+      const allFeatures = await fetchAllFeaturesWithRelations();
+  
+      // Iterate over all fetched features
+      for (const feature of allFeatures) {
+        // Extract the geometry and properties from each feature
+        const { geometry, properties } = feature.expand;
+  
+        if (!geometry || !properties) {
+          continue; // Skip if geometry or properties are missing
+        }
+  
+        // Use geometry coordinates for fetching nearby roads
+        const { latitude, longitude } = geometry;
+  
+        // Calculate color based on score value, scaling it from red (-255) to green (255)
+        const score = properties.score;
+        const normalizedScore = (score + 255) / 510; // Normalize score to [0, 1]
+        const color = `rgb(${Math.round(255 * (1 - normalizedScore))}, ${Math.round(255 * normalizedScore)}, 0)`;
+  
+        // Fetch nearby roads using Overpass API around each feature's coordinates
+        const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way["highway"](around:${this.radius},${latitude},${longitude});out tags geom;`;
+  
+        const response = await fetch(overpassUrl);
+        const data = await response.json();
+  
+        // Process each road (way) from the Overpass API response
+        data.elements.forEach((element: any) => {
+          if (element.type === 'way' && element.geometry) {
+            const latlngs = element.geometry.map((geom: any) => [geom.lat, geom.lon]);
+  
+            // Draw the road as a polyline with a color corresponding to the score
+            L.polyline(latlngs, { color: color, weight: 6, opacity: 0.8 }).addTo(this.map);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching road data from Overpass API: ', err);
+    }
+  }
+  
+
   ngAfterViewInit(): void {
-    // this.initMap();
-    // this.addRoute();
+    this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes3
   }
 }

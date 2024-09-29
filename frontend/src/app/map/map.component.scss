@@ -1,23 +1,50 @@
 .map-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: 30px;
-    margin-top: 10%;
-    width: 50%;
-  }
-  
-  .map-frame {
-    border: 2px solid black;
-    height: 100%;
-  }
-  
-  #map {
-    height: 100%;
-  }
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 70px;
+  margin: 30px;
+  margin-top: 80px;
+  width: 50%;
+}
 
-  .leaflet-routing-alt {
-    display: none;
-  }
+.map-frame {
+  border: 2px solid black;
+  height: 100%;
+}
+
+#map {
+  height: 100%;
+}
+
+.leaflet-routing-alt {
+  display: none;
+}
+
+.footer-container {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.input-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* This targets the input element inside the p-inputNumber component */
+.input-inputnumber-input {
+  width: 10px;
+  min-width: 50px; /* Sets a minimum width for the inputs */
+  box-sizing: border-box; /* Ensures padding and border do not affect input sizing */
+}

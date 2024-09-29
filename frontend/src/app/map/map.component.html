@@ -1,4 +1,27 @@
-<div class="card flex justify-content-center">
+<div class="map-container">
+    <div class="map-frame">
+        <div id="map"></div>
+    </div>
+</div>
+<div class="footer-container">
+    <div class="grid input-row">
+        <div class="input-field">
+            <p-inputNumber [(ngModel)]="latitudeStart" inputId="minmax" mode="decimal" [minFractionDigits]="4"
+                [maxFractionDigits]="6" [min]="-180" [max]="180" (onInput)="addRoute()"></p-inputNumber>
+        </div>
+        <div class="input-field">
+            <p-inputNumber [(ngModel)]="longitudeStart" inputId="minmax" mode="decimal" [minFractionDigits]="4"
+                [maxFractionDigits]="6" [min]="-180" [max]="180" (onInput)="addRoute()"></p-inputNumber>
+        </div>
+        <div class="input-field">
+            <p-inputNumber [(ngModel)]="latitudeFinish" inputId="minmax" mode="decimal" [minFractionDigits]="4"
+                [maxFractionDigits]="6" [min]="-180" [max]="180" (onInput)="addRoute()"></p-inputNumber>
+        </div>
+        <div class="input-field">
+            <p-inputNumber [(ngModel)]="longitudeFinish" inputId="minmax" mode="decimal" [minFractionDigits]="4"
+                [maxFractionDigits]="6" [min]="-180" [max]="180" (onInput)="addRoute()"></p-inputNumber>
+        </div>
+      <div class="card flex justify-content-center">
     <p-toggleButton 
       [(ngModel)]="showRoute" 
       onLabel="Hide" 
@@ -6,55 +29,6 @@
       (onChange)="OnToggleChange()"
     ></p-toggleButton>
   </div>
-  
-<div class="grid">
-    <div class="col-3">
-        <p-inputNumber 
-            [(ngModel)]="latitudeStart" 
-            inputId="minmax" 
-            mode="decimal" 
-            [minFractionDigits]="4" 
-            [maxFractionDigits]="6"
-            [min]="-180" 
-            [max]="180" 
-            (onInput)="addRoute()"/>
-    </div>
-    <div class="col-3">
-        <p-inputNumber 
-            [(ngModel)]="longitudeStart" 
-            inputId="minmax" 
-            mode="decimal" 
-            [minFractionDigits]="4" 
-            [maxFractionDigits]="6"
-            [min]="-180" 
-            [max]="180"
-            (onInput)="addRoute()"/>
-    </div>
-    <div class="col-3">
-        <p-inputNumber 
-            [(ngModel)]="latitudeFinish" 
-            inputId="minmax" 
-            mode="decimal" 
-            [minFractionDigits]="4" 
-            [maxFractionDigits]="6"
-            [min]="-180" 
-            [max]="180" 
-            (onInput)="addRoute()"/>
-    </div>
-    <div class="col-3">
-        <p-inputNumber 
-            [(ngModel)]="longitudeFinish" 
-            inputId="minmax" 
-            mode="decimal" 
-            [minFractionDigits]="4" 
-            [maxFractionDigits]="6"
-            [min]="-180" 
-            [max]="180"
-            (onInput)="addRoute()"/>
     </div>
 </div>
-<div class="map-container">
-    <div class="map-frame">
-        <div id="map"></div>
-    </div>
-</div>
+

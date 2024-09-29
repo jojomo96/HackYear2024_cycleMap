@@ -6,7 +6,9 @@
       (error)="onImageError()"
     />
     <ng-template #placeholder>
-      <img src="assets/placeholder.png" alt="Image Not Found" />
+      <img src="assets/placeholder.png" alt="Image Not Found"
+        onerror="this.onerror=null; this.src='assets/placeholder.png';"
+      />
     </ng-template>
   
     <!-- Upvote and Downvote buttons with PrimeNG styling -->

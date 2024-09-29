@@ -1,11 +1,11 @@
 FROM golang:latest as builder
 WORKDIR /app
 COPY . .
-RUN cd backend && go mod tidy && go build -o sommerlager
+RUN cd backend && go mod tidy && go build -o backend
 
 FROM ubuntu:latest
 WORKDIR /app
 RUN apt update && apt install -y ca-certificates
-COPY --from=builder /app/backend/sommerlager /app/sommerlager
-RUN ls -l /app/sommerlager
-CMD ["/app/sommerlager", "serve", "--http=0.0.0.0:8090"]
+COPY --from=builder /app/backend/backend /app/backend
+RUN ls -l /app/backend
+CMD ["/app/backend", "serve", "--http=0.0.0.0:8090"]
