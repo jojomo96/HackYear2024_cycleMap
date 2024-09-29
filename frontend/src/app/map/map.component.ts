@@ -1,5 +1,6 @@
 import { Component, OnInit, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'lrm-graphhopper';
@@ -13,7 +14,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [InputNumberModule, CommonModule, FormsModule],
+  imports: [InputNumberModule, CommonModule, FormsModule, ToggleButtonModule],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
 })
@@ -24,6 +25,7 @@ export class MapComponent implements OnInit, AfterViewInit{
   longitudeStart: number = 19.93658;
   latitudeFinish: number = 50.049683;
   longitudeFinish: number = 19.944544;
+  showRoute: boolean = true;
   private centredMapSubscription!: Subscription;
 
   constructor(private coordinateService: CoordinateService, private centredMapService: CentredMapService) {}
@@ -50,6 +52,14 @@ export class MapComponent implements OnInit, AfterViewInit{
         }
       }
     );
+  }
+
+  OnToggleChange() {
+    if (this.showRoute) {
+      this.addRoute();
+    } else {
+      this.map.removeControl(this.routingControl);
+    }
   }
 
   // Initialize the map
