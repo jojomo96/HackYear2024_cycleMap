@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import { InputNumberModule } from 'primeng/inputnumber';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -15,6 +15,8 @@ import { environment } from '../../environments/environment';
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
 })
+
+
 export class MapComponent implements AfterViewInit {
   private map: any;
   private routingControl: L.Routing.Control | null = null;
@@ -22,6 +24,8 @@ export class MapComponent implements AfterViewInit {
   longitudeStart: number = 19.93658;
   latitudeFinish: number = 50.049683;
   longitudeFinish: number = 19.944544;
+  private radius: number = 10;
+  private accidentCoords: [number, number] = [50.055, 19.945]; // Sample accident coordinates, adjust as needed
 
   constructor(private coordinateService: CoordinateService) {}
 
@@ -58,7 +62,6 @@ export class MapComponent implements AfterViewInit {
       }))
     };
   }
-
 
   // Add a route and filter the coordinates
   public addRoute(): void {
@@ -119,21 +122,21 @@ export class MapComponent implements AfterViewInit {
         const distance = getDistanceBetweenPoints(prevPoint, currentPoint);
         const angle = getAngleBetweenPoints(prevPoint, currentPoint, nextPoint);
 
-            // Only keep the point if it is farther than the threshold distance and the angle change is significant
-            if (distance > thresholdDistance && angle >= thresholdAngle) {
-                filteredCoordinates.push(currentPoint);
+        // Only keep the point if it is farther than the threshold distance and the angle change is significant
+        if (distance > thresholdDistance && angle >= thresholdAngle) {
+          filteredCoordinates.push(currentPoint);
 
-                // Mark significant direction changes with a red circle
-                if (environment.debug_display) {
-                  L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
-                      color: 'red',
-                      fillColor: '#f03',
-                      fillOpacity: 0.5,
-                      radius: 35
-                  }).addTo(this.map);
-                }
-            }
+          // Mark significant direction changes with a red circle
+          if (environment.debug_display) {
+            L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
+              color: 'red',
+              fillColor: '#f03',
+              fillOpacity: 0.5,
+              radius: 35
+            }).addTo(this.map);
+          }
         }
+      }
 
       filteredCoordinates.push(coordinates[coordinates.length - 1]);
 
@@ -146,7 +149,6 @@ export class MapComponent implements AfterViewInit {
         this.coordinateService.setGeoJSON(geoJSONRoute);
       }
 
-
       const routingContainer = document.querySelector('.leaflet-routing-container');
       if (routingContainer) {
         (routingContainer as HTMLElement).style.display = 'none';
@@ -158,8 +160,32 @@ export class MapComponent implements AfterViewInit {
     });
   }
 
+  // Fetch roads around the accident using Overpass API
+  private fetchNearbyRoads(): void {
+    const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way["highway"](around:${this.radius},${this.accidentCoords[0]},${this.accidentCoords[1]});out tags geom;`;
+
+    fetch(overpassUrl)
+      .then((response) => response.json())
+      .then((data) => {
+        // Process each road (way) from the Overpass API response
+        data.elements.forEach((element: any) => {
+          if (element.type === 'way' && element.geometry) {
+            const latlngs = element.geometry.map((geom: any) => [geom.lat, geom.lon]);
+
+            // Draw the road as a polyline and set the color to red
+            L.polyline(latlngs, { color: 'red', weight: 6, opacity: 0.8 }).addTo(this.map);
+
+          }
+        });
+      })
+      .catch((err) => {
+        console.error('Error fetching road data from Overpass API: ', err);
+      });
+  }
+
   ngAfterViewInit(): void {
     this.initMap();
     this.addRoute();
+    this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes
   }
 }
