@@ -21,6 +21,14 @@
             <p-inputNumber [(ngModel)]="longitudeFinish" inputId="minmax" mode="decimal" [minFractionDigits]="4"
                 [maxFractionDigits]="6" [min]="-180" [max]="180" (onInput)="addRoute()"></p-inputNumber>
         </div>
+      <div class="card flex justify-content-center">
+    <p-toggleButton 
+      [(ngModel)]="showRoute" 
+      onLabel="Hide" 
+      offLabel="Show" 
+      (onChange)="OnToggleChange()"
+    ></p-toggleButton>
+  </div>
     </div>
 </div>
 

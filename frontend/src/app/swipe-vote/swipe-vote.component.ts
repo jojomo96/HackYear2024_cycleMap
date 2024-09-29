@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import PocketBase from 'pocketbase';
 import { HttpClient } from '@angular/common/http';
 import { GeoJSON, CoordinateService } from '../coordinate.service';
+import { CentredMapService } from '../centred_map.service';
 
 const pb = new PocketBase(environment.pocketBaseUrl);
 
@@ -20,7 +21,7 @@ export class SwipeVoteComponent implements OnInit {
   currentIndex = 0; // Current index of the feature being displayed
   imageError = false; // Placeholder for the error state
 
-  constructor(public http: HttpClient, private coordinateService: CoordinateService) {}
+  constructor(public http: HttpClient, private coordinateService: CoordinateService, private centredMapService: CentredMapService) {}
 
   ngOnInit() {
     // Subscribe to the GeoJSON data updates from the service
@@ -143,6 +144,8 @@ export class SwipeVoteComponent implements OnInit {
   // Handler for the Upvote button
   upvote() {
     const coordinates = this.getCurrentCoordinates();
+    console.log('in upvote function:' + coordinates);
+    
     if (coordinates) {
       const { lat, lng } = coordinates;
       console.log('Upvote clicked for coordinates:', lat, lng);
@@ -162,11 +165,17 @@ export class SwipeVoteComponent implements OnInit {
     }
   }
 
-  // Method to move to the next coordinate in the list
   nextCoordinate() {
     if (this.geojson && this.geojson.features.length > 0) {
       this.currentIndex = (this.currentIndex + 1) % this.geojson.features.length;
       this.imageError = false; // Reset error state when moving to the next image
+
+      // Emit the current coordinates for centering the map
+      const coordinates = this.getCurrentCoordinates();
+      console.log('in nextCoordinate function:' + coordinates);
+      if (coordinates) {
+        this.centredMapService.setCenterCoordinates(coordinates.lat, coordinates.lng);
+      }
     }
   }
 

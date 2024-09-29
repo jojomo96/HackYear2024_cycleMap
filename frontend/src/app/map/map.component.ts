@@ -1,11 +1,14 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ElementRef, Renderer2 } from '@angular/core';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'lrm-graphhopper';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { CoordinateService } from '../coordinate.service';
+import { CentredMapService } from '../centred_map.service';
 import { environment } from '../../environments/environment';
 
 import PocketBase from 'pocketbase';
@@ -52,26 +55,24 @@ async function fetchAllFeaturesWithRelations() {
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [InputNumberModule, CommonModule, FormsModule],
+  imports: [InputNumberModule, CommonModule, FormsModule, ToggleButtonModule],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
 })
-
-
-export class MapComponent implements AfterViewInit {
+export class MapComponent implements OnInit, AfterViewInit {
   private map: any;
   private routingControl: L.Routing.Control | null = null;
   latitudeStart: number = 50.06143;
   longitudeStart: number = 19.93658;
   latitudeFinish: number = 50.049683;
   longitudeFinish: number = 19.944544;
+  showRoute: boolean = true;
+  private centredMapSubscription!: Subscription;
   private radius: number = 10;
-  private accidentCoords: [number, number] = [50.055, 19.945]; // Sample accident coordinates, adjust as needed
 
-  constructor(private coordinateService: CoordinateService) {}
+  constructor(private coordinateService: CoordinateService, private centredMapService: CentredMapService) {}
 
-  // Initialize the map
-  private initMap(): void {
+  ngOnInit() {
     this.map = L.map('map', {
       center: [50.06143, 19.93658],
       zoom: 14
@@ -83,7 +84,40 @@ export class MapComponent implements AfterViewInit {
       attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
     tiles.addTo(this.map);
+
+    this.addRoute();
+
+    this.centredMapSubscription = this.centredMapService.coordinates$.subscribe(
+      (newCoordinates: [number, number] | null) => {
+        if (newCoordinates) {
+          this.updateMapCenter(newCoordinates);
+        }
+      }
+    );
   }
+
+  OnToggleChange() {
+    if (this.showRoute) {
+      this.addRoute();
+    } else {
+      this.map.removeControl(this.routingControl);
+    }
+  }
+
+  // Initialize the map
+  // private initMap(): void {
+  //   this.map = L.map('map', {
+  //     center: [50.06143, 19.93658],
+  //     zoom: 14
+  //   });
+
+  //   const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  //     maxZoom: 18,
+  //     minZoom: 3,
+  //     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  //   });
+  //   tiles.addTo(this.map);
+  // }
 
   // Method to convert filtered coordinates to GeoJSON Point features in a FeatureCollection
   private filteredCoordinatesToGeoJSON(filteredCoordinates: any[]): any {
@@ -102,6 +136,12 @@ export class MapComponent implements AfterViewInit {
         }
       }))
     };
+  }
+
+  updateMapCenter(newCoordinates: [number, number]): void {
+    const currentZoom = this.map.getZoom();
+    console.log('Updating map center to:', newCoordinates);
+    this.map.setView(newCoordinates, currentZoom);  // Keep the current zoom level and update center
   }
 
   // Add a route and filter the coordinates
@@ -246,9 +286,6 @@ export class MapComponent implements AfterViewInit {
   
 
   ngAfterViewInit(): void {
-    this.initMap();
-    this.addRoute();
     this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes3
-    // this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes
   }
 }
