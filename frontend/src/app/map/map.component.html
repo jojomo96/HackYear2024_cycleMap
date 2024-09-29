@@ -1,20 +1,46 @@
 <div class="grid">
-    <div class="col-6">
+    <div class="col-3">
         <p-inputNumber 
-            [(ngModel)]="latitude" 
+            [(ngModel)]="latitudeStart" 
             inputId="minmax" 
             mode="decimal" 
-            [min]="0" 
-            [max]="100" 
+            [minFractionDigits]="4" 
+            [maxFractionDigits]="6"
+            [min]="-180" 
+            [max]="180" 
             (onInput)="addRoute()"/>
     </div>
-    <div class="col-6">
+    <div class="col-3">
         <p-inputNumber 
-            [(ngModel)]="longitude" 
+            [(ngModel)]="longitudeStart" 
             inputId="minmax" 
             mode="decimal" 
-            [min]="0" 
-            [max]="100"
+            [minFractionDigits]="4" 
+            [maxFractionDigits]="6"
+            [min]="-180" 
+            [max]="180"
+            (onInput)="addRoute()"/>
+    </div>
+    <div class="col-3">
+        <p-inputNumber 
+            [(ngModel)]="latitudeFinish" 
+            inputId="minmax" 
+            mode="decimal" 
+            [minFractionDigits]="4" 
+            [maxFractionDigits]="6"
+            [min]="-180" 
+            [max]="180" 
+            (onInput)="addRoute()"/>
+    </div>
+    <div class="col-3">
+        <p-inputNumber 
+            [(ngModel)]="longitudeFinish" 
+            inputId="minmax" 
+            mode="decimal" 
+            [minFractionDigits]="4" 
+            [maxFractionDigits]="6"
+            [min]="-180" 
+            [max]="180"
             (onInput)="addRoute()"/>
     </div>
 </div>

@@ -16,8 +16,10 @@ import { FormsModule } from '@angular/forms';
 export class MapComponent implements AfterViewInit {
   private map: any;
   private routingControl: L.Routing.Control| null = null;
-  latitude: number = 50.049683;
-  longitude: number = 19.944544;
+  latitudeStart: number = 50.06143;
+  longitudeStart: number = 19.93658;
+  latitudeFinish: number = 50.049683;
+  longitudeFinish: number = 19.944544;
 
   private initMap(): void {
     this.map = L.map('map', {
@@ -43,8 +45,8 @@ export class MapComponent implements AfterViewInit {
 
     this.routingControl = L.Routing.control({
       waypoints: [
-        L.latLng(50.06143, 19.93658),  // Starting point
-        L.latLng(this.latitude, this.longitude)  // Destination point
+        L.latLng(this.latitudeStart, this.longitudeStart),  // Starting point
+        L.latLng(this.latitudeFinish, this.longitudeFinish)  // Destination point
       ],
       // router: new L.Routing.GraphHopper('3c4ee12e-a6c1-4915-a4d5-0bebcbde7a6a', {
       router: new (L.Routing as any).GraphHopper('3c4ee12e-a6c1-4915-a4d5-0bebcbde7a6a', {
