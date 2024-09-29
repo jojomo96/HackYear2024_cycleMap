@@ -16,6 +16,7 @@ const pb = new PocketBase(environment.pocketBaseUrl);
   styleUrls: ['./swipe-vote.component.scss'],
 })
 export class SwipeVoteComponent implements OnInit {
+  private radius: number = 10;
   geojson: GeoJSON | null = null; // Variable to store the GeoJSON data
   currentIndex = 0; // Current index of the feature being displayed
   imageError = false; // Placeholder for the error state
@@ -48,31 +49,30 @@ export class SwipeVoteComponent implements OnInit {
     return Math.max(Math.min(newScore, maxScore), minScore);
   }
 
-  // Function to update or create an entry
   async updateOrCreateEntry(latitude: number, longitude: number, vote: number): Promise<void> {
     try {
       // Step 1: Check if an existing geometry entry matches the provided latitude and longitude
       const existingGeometry = await pb.collection('geometry').getList(1, 1, {
         filter: `latitude = ${latitude} && longitude = ${longitude}`,
       });
-
+  
       if (existingGeometry.items.length > 0) {
         const geometryEntry = existingGeometry.items[0];
-
+  
         // Step 2: Find the related Swipe_to_ride entry
         const existingFeature = await pb.collection('features').getList(1, 1, {
           filter: `geometry = "${geometryEntry.id}"`,
         });
-
+  
         if (existingFeature.items.length > 0) {
           const featureEntry = existingFeature.items[0];
           const propertiesId = featureEntry['properties'];
-
+  
           // Step 3: Update the properties entry with the new score using the scoring function
           const existingProperty = await pb.collection('properties').getOne(propertiesId);
           const currentScore = existingProperty['score'] || 0; // Handle missing score as zero
           const newScore = this.updateScoreLimitBased(currentScore, vote);
-
+  
           await pb.collection('properties').update(propertiesId, {
             score: newScore,
           });
@@ -87,39 +87,91 @@ export class SwipeVoteComponent implements OnInit {
           longitude: longitude,
           latitude: latitude,
         }).toPromise();
-
+  
         if (!geometryRes || !geometryRes.id) {
           throw new Error('Failed to create new geometry entry.');
         }
-
+  
         const newGeometry: any = geometryRes;
-
+  
         // Create new properties entry with an initial score adjusted by the vote
         const initialScore = vote === 1 ? 51 : -51;
         const propertiesRes: any = await this.http.post('http://localhost:8090/api/collections/properties/records', {
           name: 'default',
           score: initialScore,
         }).toPromise();
-
+  
         if (!propertiesRes || !propertiesRes.id) {
           throw new Error('Failed to create new properties entry.');
         }
-
+  
         const newProperties = propertiesRes;
-
-        // Create new features entry
-        await this.http.post('http://localhost:8090/api/collections/features/records', {
+  
+        // Create new features entry and capture its ID
+        const featuresRes: any = await this.http.post('http://localhost:8090/api/collections/features/records', {
           type: 'default',
           geometry: newGeometry.id,
           properties: newProperties.id,
         }).toPromise();
-
+  
+        if (!featuresRes || !featuresRes.id) {
+          throw new Error('Failed to create new feature entry.');
+        }
+  
+        const newFeature = featuresRes;
+  
         console.log('Created new geometry, properties, and linked them in features.');
+  
+        // Pass the new feature id to the saveOmwWays method instead of geometry.id
+        this.saveOmwWays(latitude, longitude, newFeature.id);
       }
     } catch (error) {
       console.error('Error updating or creating entry:', error);
     }
   }
+  
+
+  async saveOmwWays(latitude: number, longitude: number, id: number) {
+    // Define the Overpass API URL with the given radius, latitude, and longitude
+    const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way["highway"](around:${this.radius},${latitude},${longitude});out tags geom;`;
+  
+    try {
+      // Fetch data from Overpass API
+      const response = await fetch(overpassUrl);
+      const data = await response.json();
+  
+      // Check if ways are returned in the response
+      if (data.elements && data.elements.length > 0) {
+        for (const element of data.elements) {
+          // Prepare the payload based on your PocketBase collection schema
+          const payload = {
+            type: element.type,
+            minlat: element.bounds.minlat,
+            minlon: element.bounds.minlon,
+            maxlat: element.bounds.maxlat,
+            maxlon: element.bounds.maxlon,
+            geometry: element.geometry,
+            tags: element.tags,
+            featuresId: id,
+          };
+  
+          // Send a POST request to add the way to the osm_ways collection in PocketBase
+          const res = await this.http.post('http://localhost:8090/api/collections/osm_ways/records', payload).toPromise();
+  
+          if (res) {
+            console.log(`Successfully saved way with ID ${element.id}`);
+          } else {
+            console.error(`Failed to save way with ID ${element.id}`);
+          }
+        }
+      } else {
+        console.log('No ways found near the provided coordinates.');
+      }
+    } catch (error) {
+      console.error('Error fetching or saving OSM ways:', error);
+    }
+  }
+  
 
   // Method to get the current coordinates from the GeoJSON data
   getCurrentCoordinates() {
@@ -162,6 +214,9 @@ export class SwipeVoteComponent implements OnInit {
     }
   }
 
+
+  
+
   // Method to move to the next coordinate in the list
   nextCoordinate() {
     if (this.geojson && this.geojson.features.length > 0) {
@@ -175,3 +230,4 @@ export class SwipeVoteComponent implements OnInit {
     this.imageError = true;
   }
 }
+

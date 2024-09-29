@@ -12,20 +12,20 @@ import PocketBase from 'pocketbase';
 
 const pb = new PocketBase(environment.pocketBaseUrl);
 
-async function fetchAllFeaturesWithRelations() {
+async function fetchAllOSMWays() {
   let page = 1;
   const perPage = 50; // Define how many records to fetch per request
-  let allFeatures: any[] = [];
+  let allOSMWays: any[] = [];
 
   try {
     while (true) {
-      // Fetch records from the 'features' collection with expanded relations
-      const result = await pb.collection('features').getList(page, perPage, {
-        expand: 'geometry,properties',
+      // Fetch records from the 'osm_ways' collection with expanded 'feature' (which now contains geometry and properties)
+      const result = await pb.collection('osm_ways').getList(page, perPage, {
+        expand: 'featuresId,featuresId.geometry,featuresId.properties' // This expands the 'feature' relation field that contains both geometry and properties
       });
 
-      // Add the fetched items to the allFeatures array
-      allFeatures = allFeatures.concat(result.items);
+      // Add the fetched items to the allOSMWays array
+      allOSMWays = allOSMWays.concat(result.items);
 
       // Check if we have fetched all pages
       if (result.items.length < perPage) {
@@ -36,17 +36,18 @@ async function fetchAllFeaturesWithRelations() {
       page++;
     }
 
-    // Log all fetched records
-    console.log('All records have been successfully fetched.');
-    console.log(allFeatures); // Log all fetched records
+    // Log all fetched OSM ways with expanded feature (geometry and properties)
+    console.log('All OSM ways have been successfully fetched with expanded feature (geometry and properties).');
+    console.log(allOSMWays); // Log all fetched OSM ways with the expanded feature
 
     // Process the fetched data as needed
-    return allFeatures;
+    return allOSMWays;
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error fetching OSM ways data:', error);
     return [];
   }
 }
+
 
 
 @Component({
@@ -56,8 +57,6 @@ async function fetchAllFeaturesWithRelations() {
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
 })
-
-
 export class MapComponent implements AfterViewInit {
   private map: any;
   private routingControl: L.Routing.Control | null = null;
@@ -66,9 +65,8 @@ export class MapComponent implements AfterViewInit {
   latitudeFinish: number = 50.049683;
   longitudeFinish: number = 19.944544;
   private radius: number = 10;
-  private accidentCoords: [number, number] = [50.055, 19.945]; // Sample accident coordinates, adjust as needed
 
-  constructor(private coordinateService: CoordinateService) {}
+  constructor(private coordinateService: CoordinateService) { }
 
   // Initialize the map
   private initMap(): void {
@@ -203,52 +201,33 @@ export class MapComponent implements AfterViewInit {
 
   private async fetchNearbyRoads(): Promise<void> {
     try {
-      // Fetch all features with related data
-      const allFeatures = await fetchAllFeaturesWithRelations();
-  
-      // Iterate over all fetched features
-      for (const feature of allFeatures) {
-        // Extract the geometry and properties from each feature
-        const { geometry, properties } = feature.expand;
-  
-        if (!geometry || !properties) {
-          continue; // Skip if geometry or properties are missing
-        }
-  
-        // Use geometry coordinates for fetching nearby roads
-        const { latitude, longitude } = geometry;
-  
+      // Fetch nearby roads using saved OSM ways data
+      const osmWays = await fetchAllOSMWays(); // Fetch all saved osm_ways data
+
+
+      // Process each way (road) from the saved data
+      osmWays.forEach((way: any) => {
+        console.log('Processing way:', way);
         // Calculate color based on score value, scaling it from red (-255) to green (255)
-        const score = properties.score;
+        const score = way.expand.featuresId.expand.properties.score || 0; // Get the score from the properties
         const normalizedScore = (score + 255) / 510; // Normalize score to [0, 1]
         const color = `rgb(${Math.round(255 * (1 - normalizedScore))}, ${Math.round(255 * normalizedScore)}, 0)`;
-  
-        // Fetch nearby roads using Overpass API around each feature's coordinates
-        const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way["highway"](around:${this.radius},${latitude},${longitude});out tags geom;`;
-  
-        const response = await fetch(overpassUrl);
-        const data = await response.json();
-  
-        // Process each road (way) from the Overpass API response
-        data.elements.forEach((element: any) => {
-          if (element.type === 'way' && element.geometry) {
-            const latlngs = element.geometry.map((geom: any) => [geom.lat, geom.lon]);
-  
-            // Draw the road as a polyline with a color corresponding to the score
-            L.polyline(latlngs, { color: color, weight: 6, opacity: 0.8 }).addTo(this.map);
-          }
-        });
-      }
+
+        if (way.geometry) {
+          const latlngs = way.geometry.map((geom: any) => [geom.lat, geom.lon]);
+
+          // Draw the way as a polyline with a color corresponding to the score
+          L.polyline(latlngs, { color: color, weight: 6, opacity: 0.8 }).addTo(this.map);
+        }
+      });
     } catch (err) {
-      console.error('Error fetching road data from Overpass API: ', err);
+      console.error('Error fetching road data from PocketBase: ', err);
     }
   }
-  
 
   ngAfterViewInit(): void {
     this.initMap();
     this.addRoute();
-    this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes3
-    // this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes
+    this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes
   }
 }
