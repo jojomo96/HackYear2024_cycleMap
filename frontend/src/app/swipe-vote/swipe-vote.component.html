@@ -9,21 +9,22 @@
       <img src="assets/placeholder.png" alt="Image Not Found" />
     </ng-template>
   
-  <!-- Upvote and Downvote buttons with PrimeNG styling -->
-  <button
-    pButton
-    type="button"
-    icon="pi pi-check"
-    class="vote-button upvote-button"
-    (click)="upvote(coordinates[currentIndex].lat, coordinates[currentIndex].lng)"
-    aria-label="Upvote"
-  ></button>
-  <button
-    pButton
-    type="button"
-    icon="pi pi-times"
-    class="vote-button downvote-button"
-    (click)="downvote(coordinates[currentIndex].lat, coordinates[currentIndex].lng)"
-    aria-label="Downvote"
-  ></button>
-</div>
+    <!-- Upvote and Downvote buttons with PrimeNG styling -->
+    <button
+      pButton
+      type="button"
+      icon="pi pi-check"
+      class="vote-button upvote-button"
+      (click)="upvote()"
+      aria-label="Upvote"
+    ></button>
+    <button
+      pButton
+      type="button"
+      icon="pi pi-times"
+      class="vote-button downvote-button"
+      (click)="downvote()"
+      aria-label="Downvote"
+    ></button>
+  </div>
+  
