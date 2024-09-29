@@ -22,13 +22,25 @@
   display: none;
 }
 
+// .footer-container {
+//   position: absolute;
+//   bottom: 20px;
+//   width: 100%;
+//   padding: 0 10px;
+//   box-sizing: border-box;
+// }
+
 .footer-container {
   position: absolute;
   bottom: 20px;
   width: 100%;
+  max-width: 1200px; /* Or any value that fits your layout */
   padding: 0 10px;
   box-sizing: border-box;
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Align to the center */
 }
+
 
 .input-row {
   display: flex;
