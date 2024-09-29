@@ -17,41 +17,33 @@ const pb = new PocketBase(environment.pocketBaseUrl);
 
 async function fetchAllOSMWays() {
   let page = 1;
-  const perPage = 50; // Define how many records to fetch per request
+  const perPage = 50;
   let allOSMWays: any[] = [];
 
   try {
     while (true) {
-      // Fetch records from the 'osm_ways' collection with expanded 'feature' (which now contains geometry and properties)
       const result = await pb.collection('osm_ways').getList(page, perPage, {
-        expand: 'featuresId,featuresId.geometry,featuresId.properties' // This expands the 'feature' relation field that contains both geometry and properties
+        expand: 'featuresId,featuresId.geometry,featuresId.properties'
       });
 
-      // Add the fetched items to the allOSMWays array
       allOSMWays = allOSMWays.concat(result.items);
 
-      // Check if we have fetched all pages
       if (result.items.length < perPage) {
-        break; // If fewer items than perPage are returned, we've reached the last page
+        break;
       }
 
-      // Increment the page number to fetch the next set of records
       page++;
     }
 
-    // Log all fetched OSM ways with expanded feature (geometry and properties)
     console.log('All OSM ways have been successfully fetched with expanded feature (geometry and properties).');
-    console.log(allOSMWays); // Log all fetched OSM ways with the expanded feature
+    console.log(allOSMWays);
 
-    // Process the fetched data as needed
     return allOSMWays;
   } catch (error) {
     console.error('Error fetching OSM ways data:', error);
     return [];
   }
 }
-
-
 
 @Component({
   selector: 'app-map',
@@ -63,19 +55,20 @@ async function fetchAllOSMWays() {
 export class MapComponent implements OnInit, AfterViewInit {
   private map: any;
   private routingControl: L.Routing.Control | null = null;
+  private centerMarker: L.Marker | null = null; // Center marker
   latitudeStart: number = 50.06143;
   longitudeStart: number = 19.93658;
   latitudeFinish: number = 50.049683;
   longitudeFinish: number = 19.944544;
   showRoute: boolean = true;
   private centredMapSubscription!: Subscription;
-  private radius: number = 10;
+  private lastCenterCoordinates: [number, number] = [50.06143, 19.93658]; // Store the last known center
 
   constructor(private coordinateService: CoordinateService, private centredMapService: CentredMapService) {}
 
   ngOnInit() {
     this.map = L.map('map', {
-      center: [50.06143, 19.93658],
+      center: this.lastCenterCoordinates, // Initial center
       zoom: 14
     });
 
@@ -88,6 +81,9 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     this.addRoute();
 
+    // Add the marker at the initial center of the map
+    this.centerMarker = L.marker(this.lastCenterCoordinates, { draggable: false }).addTo(this.map);
+
     this.centredMapSubscription = this.centredMapService.coordinates$.subscribe(
       (newCoordinates: [number, number] | null) => {
         if (newCoordinates) {
@@ -99,53 +95,42 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   OnToggleChange() {
     if (this.showRoute) {
+      // Show the route and marker
       this.addRoute();
+
+      // Add the marker back to the map if it's not already there
+      if (this.centerMarker && !this.map.hasLayer(this.centerMarker)) {
+        this.centerMarker.addTo(this.map);
+      }
     } else {
-      this.map.removeControl(this.routingControl);
+      // Remove the route and marker
+      if (this.routingControl) {
+        this.map.removeControl(this.routingControl);
+      }
+
+      // Remove the marker from the map
+      if (this.centerMarker && this.map.hasLayer(this.centerMarker)) {
+        this.map.removeLayer(this.centerMarker);
+      }
     }
-  }
-
-  // Initialize the map
-  // private initMap(): void {
-  //   this.map = L.map('map', {
-  //     center: [50.06143, 19.93658],
-  //     zoom: 14
-  //   });
-
-  //   const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  //     maxZoom: 18,
-  //     minZoom: 3,
-  //     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  //   });
-  //   tiles.addTo(this.map);
-  // }
-
-  // Method to convert filtered coordinates to GeoJSON Point features in a FeatureCollection
-  private filteredCoordinatesToGeoJSON(filteredCoordinates: any[]): any {
-    console.log('Converting coordinates to GeoJSON Point Features');
-
-    return {
-      type: 'FeatureCollection',
-      features: filteredCoordinates.map((coord: any, index: number) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [coord.lng, coord.lat]  // Ensure coordinates are in [lng, lat] order
-        },
-        properties: {
-          name: `Sample Location ${index + 1}`  // Optionally add a name or other properties
-        }
-      }))
-    };
   }
 
   updateMapCenter(newCoordinates: [number, number]): void {
     const currentZoom = this.map.getZoom();
     console.log('Updating map center to:', newCoordinates);
-    this.map.setView(newCoordinates, currentZoom);  // Keep the current zoom level and update center
+    
+    // Update the last known center coordinates
+    this.lastCenterCoordinates = newCoordinates;
+    
+    // Move the map to the new center
+    this.map.setView(newCoordinates, currentZoom);
+
+    // Update the marker position to the new center
+    if (this.centerMarker) {
+      this.centerMarker.setLatLng(newCoordinates);
+    }
   }
 
-  // Add a route and filter the coordinates
   public addRoute(): void {
     if (this.routingControl) {
       this.map.removeControl(this.routingControl);
@@ -169,7 +154,6 @@ export class MapComponent implements OnInit, AfterViewInit {
       addWaypoints: false
     }).addTo(this.map);
 
-    // Filter the coordinates after the route is found
     this.routingControl.on('routesfound', (e) => {
       const routes = e.routes;
       const thresholdDistance = 50;
@@ -204,11 +188,9 @@ export class MapComponent implements OnInit, AfterViewInit {
         const distance = getDistanceBetweenPoints(prevPoint, currentPoint);
         const angle = getAngleBetweenPoints(prevPoint, currentPoint, nextPoint);
 
-        // Only keep the point if it is farther than the threshold distance and the angle change is significant
         if (distance > thresholdDistance && angle >= thresholdAngle) {
           filteredCoordinates.push(currentPoint);
 
-          // Mark significant direction changes with a red circle
           if (environment.debug_display) {
             L.circle(L.latLng(currentPoint.lat, currentPoint.lng), {
               color: 'red',
@@ -224,10 +206,8 @@ export class MapComponent implements OnInit, AfterViewInit {
 
       if (filteredCoordinates) {
         console.log('Filtered coordinates:', filteredCoordinates);
-        // Convert filtered coordinates to GeoJSON
         const geoJSONRoute = this.filteredCoordinatesToGeoJSON(filteredCoordinates);
         console.log('GeoJSON Route:', geoJSONRoute);
-        // Store the GeoJSON in the CoordinateService
         this.coordinateService.setGeoJSON(geoJSONRoute);
       }
 
@@ -242,24 +222,35 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
+  private filteredCoordinatesToGeoJSON(filteredCoordinates: any[]): any {
+    console.log('Converting coordinates to GeoJSON Point Features');
+    return {
+      type: 'FeatureCollection',
+      features: filteredCoordinates.map((coord: any, index: number) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [coord.lng, coord.lat]
+        },
+        properties: {
+          name: `Sample Location ${index + 1}`
+        }
+      }))
+    };
+  }
+
   private async fetchNearbyRoads(): Promise<void> {
     try {
-      // Fetch nearby roads using saved OSM ways data
-      const osmWays = await fetchAllOSMWays(); // Fetch all saved osm_ways data
+      const osmWays = await fetchAllOSMWays();
 
-
-      // Process each way (road) from the saved data
       osmWays.forEach((way: any) => {
         console.log('Processing way:', way);
-        // Calculate color based on score value, scaling it from red (-255) to green (255)
-        const score = way.expand.featuresId.expand.properties.score || 0; // Get the score from the properties
-        const normalizedScore = (score + 255) / 510; // Normalize score to [0, 1]
+        const score = way.expand.featuresId.expand.properties.score || 0;
+        const normalizedScore = (score + 255) / 510;
         const color = `rgb(${Math.round(255 * (1 - normalizedScore))}, ${Math.round(255 * normalizedScore)}, 0)`;
 
         if (way.geometry) {
           const latlngs = way.geometry.map((geom: any) => [geom.lat, geom.lon]);
-
-          // Draw the way as a polyline with a color corresponding to the score
           L.polyline(latlngs, { color: color, weight: 6, opacity: 0.8 }).addTo(this.map);
         }
       });
@@ -269,6 +260,6 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.fetchNearbyRoads(); // Call the function after initializing the map and adding routes3
+    this.fetchNearbyRoads();
   }
 }
