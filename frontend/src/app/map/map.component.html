@@ -1,3 +1,23 @@
+<div class="grid">
+    <div class="col-6">
+        <p-inputNumber 
+            [(ngModel)]="latitude" 
+            inputId="minmax" 
+            mode="decimal" 
+            [min]="0" 
+            [max]="100" 
+            (onInput)="addRoute()"/>
+    </div>
+    <div class="col-6">
+        <p-inputNumber 
+            [(ngModel)]="longitude" 
+            inputId="minmax" 
+            mode="decimal" 
+            [min]="0" 
+            [max]="100"
+            (onInput)="addRoute()"/>
+    </div>
+</div>
 <div class="map-container">
     <div class="map-frame">
         <div id="map"></div>
