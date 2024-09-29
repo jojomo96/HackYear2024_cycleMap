@@ -5,6 +5,7 @@ import 'leaflet-routing-machine';
 import 'lrm-graphhopper';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CoordinateService } from '../coordinate.service';
 
 @Component({
   selector: 'app-map',
@@ -34,6 +35,42 @@ export class MapComponent implements AfterViewInit {
     });
     tiles.addTo(this.map);
   }
+
+  constructor (private coordinateService: CoordinateService) {}
+    
+  calculateGeoJSON() {
+    // Replace this with your actual GeoJSON fetching or calculating logic
+    const geojsonData = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [19.9450955, 50.0716554],
+          },
+          properties: {
+            name: 'Sample Location 1',
+          },
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [19.939628, 50.062622],
+          },
+          properties: {
+            name: 'Sample Location 2',
+          },
+        },
+        // Add more features as needed
+      ],
+    };
+
+    // Update the shared GeoJSON service with the new data
+    this.coordinateService.setGeoJSON(geojsonData);
+  }
+
 
   public addRoute(): void {
     console.log(this.routingControl);
@@ -66,11 +103,12 @@ export class MapComponent implements AfterViewInit {
     this.routingControl.on('routesfound', () => {
       const routingContainer = document.querySelector('.leaflet-routing-container');
       if (routingContainer) {
-      (routingContainer as HTMLElement).style.display = 'none';
+        (routingContainer as HTMLElement).style.display = 'none';
       }
     });
     // Log successful routing responses
     this.routingControl.on('routesfound', function(e) {
+      this.calculateGeoJSON();
       const routes = e.routes;
       console.log('Routes found:', routes);
     });
