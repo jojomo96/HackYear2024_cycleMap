@@ -171,7 +171,7 @@ export class MapComponent implements AfterViewInit {
         }
     });
     // Log successful routing responses
-    this.routingControl.on('routesfound', function(e) {
+    this.routingControl.on('routesfound', (e: any) => {
       this.calculateGeoJSON();
       const routes = e.routes;
       console.log('Routes found:', routes);
